@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrainV2 - AI Trợ lý 3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/"
+        }
+    }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            overflow: hidden;
+            /* Đảm bảo tên file ảnh đúng là background.jpg và nằm cùng thư mục */
+            background: url('/static/background.jpg') no-repeat center center fixed;
+            background-size: cover; 
+            color: white;
+        }
+        
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        #ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .ui-element {
+            pointer-events: auto;
+        }
+        
+        /* Top bar */
+        #top-bar {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+        }
+        
+        .refresh-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(180deg);
+        }
+        
+        .contact-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+        }
+        
+        .contact-info img {
+            width: 24px;
+            height: 24px;
+        }
+        
+        /* Text bubble */
+        #text-bubble {
+            position: absolute;
+            top: 20%;
+            left: 10%;
+            max-width: 400px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 20px 25px;
+            color: white;
+            font-size: 16px;
+            line-height: 1.6;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+        
+        #text-bubble.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        #text-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 30px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid rgba(0, 0, 0, 0.7);
+        }
+        
+        /* Input area */
+        #input-area {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #text-input {
+            flex: 1;
+            padding: 15px 20px;
+            border-radius: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        #text-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        #text-input:focus {
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .action-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(59, 130, 246, 0.8);
+            backdrop-filter: blur(10px);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-size: 20px;
+        }
+        
+        .action-btn:hover {
+            background: rgba(59, 130, 246, 1);
+            transform: scale(1.1);
+        }
+        
+        .action-btn.recording {
+            background: rgba(239, 68, 68, 0.8);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* Loading overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <div id="canvas-container"></div>
+    
+    <div id="ui-overlay">
+        <div id="top-bar" class="ui-element">
+            <button class="refresh-btn" onclick="location.reload()" title="Làm mới">
+                <svg width="20" height="20" fill="white" viewBox="0 0 24 24">
+                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                </svg>
+            </button>
+            <div class="contact-info">
+                <svg width="24" height="24" fill="#3b82f6" viewBox="0 0 24 24">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+                <span>微信: LKZ4251</span>
+                <svg width="20" height="20" fill="white" viewBox="0 0 24 24">
+                    <path d="M19 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h4l3 3 3-3h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 16H5V4h14v14z"/>
+                </svg>
+            </div>
+        </div>
+        
+        <div id="text-bubble" class="ui-element">
+            <div id="bubble-text">Xin chào! Tôi là trợ lý AI của bạn. Bạn có thể nhập câu hỏi hoặc sử dụng giọng nói để trò chuyện với tôi.</div>
+        </div>
+        
+        <div id="input-area" class="ui-element">
+            <input type="text" id="text-input" placeholder="Nhập câu hỏi của bạn..." />
+            <button class="action-btn" id="send-btn" title="Gửi">
+                <svg width="24" height="24" fill="white" viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+            <button class="action-btn" id="mic-btn" title="Ghi âm">
+                <svg width="24" height="24" fill="white" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        
+        // === BIẾN TOÀN CỤC ===
+        let avatar, mixer, animationAction;
+        const clock = new THREE.Clock();
+
+        // Hàm chính để khởi tạo ứng dụng
+        async function initApp() {
+            // 1. Load config
+            let botConfig = null;
+            try {
+                const response = await fetch('/static/bot_config.json');
+                botConfig = await response.json();
+                console.log("Loaded config:", botConfig);
+            } catch (err) {
+                console.error("Không thể load bot_config.json, sử dụng mặc định.", err);
+            }
+
+            // === 3D SCENE SETUP ===
+            const scene = new THREE.Scene();
+            scene.background = null; 
+            
+            const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+            
+            // Setup Camera dựa trên Config
+            if (botConfig && botConfig.camera) {
+                const pos = botConfig.camera.position;
+                const target = botConfig.camera.target;
+                
+                // Set vị trí camera từ JSON
+                camera.position.set(pos[0], pos[1], pos[2]);
+                
+                // Nếu có tham số zoom (mặc dù PerspectiveCamera dùng FOV, nhưng ta có thể scale khoảng cách hoặc giữ nguyên)
+                if (botConfig.camera.zoom && botConfig.camera.zoom !== 1) {
+                    camera.zoom = botConfig.camera.zoom;
+                    camera.updateProjectionMatrix();
+                }
+            } else {
+                camera.position.set(0, 1.6, 4); // Mặc định cũ
+            }
+            
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // Setup Controls Target dựa trên Config
+            if (botConfig && botConfig.camera && botConfig.camera.target) {
+                const target = botConfig.camera.target;
+                controls.target.set(target[0], target[1], target[2]);
+            } else {
+                controls.target.set(0, 1, 0); // Mặc định cũ
+            }
+            
+            // Giới hạn zoom
+            controls.minDistance = 2.5;
+            controls.maxDistance = 20; // Tăng lên một chút đề phòng model to
+            controls.enablePan = false;
+            
+            // Lighting
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+            hemiLight.position.set(0, 20, 0);
+            scene.add(hemiLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(5, 10, 7);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+            
+            const fillLight = new THREE.PointLight(0xffaa00, 0.4);
+            fillLight.position.set(-5, 2, 5);
+            scene.add(fillLight);
+            
+            // === LOAD 3D MODEL ===
+            const loader = new GLTFLoader();
+            
+            // Xác định URL model
+            // Nếu config có tên model, ta giả định file là [name].glb cùng thư mục
+            let modelUrl = 'https://models.readyplayer.me/6927ab785f9f523e5021c353.glb'; // Fallback mặc định
+            if (botConfig && botConfig.modelInfo && botConfig.modelInfo.name) {
+                // Giả sử file model là .glb, bạn có thể đổi thành .vrm nếu cần
+                modelUrl = `/static/${botConfig.modelInfo.name}.glb`;
+            }
+            
+            console.log("Loading model from:", modelUrl);
+
+            loader.load(modelUrl, (gltf) => {
+                avatar = gltf.scene;
+                scene.add(avatar);
+                
+                // === ÁP DỤNG MATERIAL TỪ JSON ===
+                if (botConfig && botConfig.materials) {
+                    avatar.traverse((child) => {
+                        if (child.isMesh && child.material) {
+                            // Kiểm tra xem tên material của mesh có nằm trong config không
+                            // Lưu ý: JSON key là "Body", "Face", "Hair". 
+                            // Tên material trong file 3D thường là "Body", "Face_baked", v.v. cần khớp chính xác hoặc khớp một phần.
+                            // Ở đây ta tìm kiếm chính xác theo key trong JSON
+                            
+                            const matName = child.material.name;
+                            const matSettings = botConfig.materials[matName];
+                            
+                            if (matSettings) {
+                                // Áp dụng Alpha Cutoff
+                                if (matSettings.alphaCutoff !== undefined) {
+                                    child.material.alphaTest = matSettings.alphaCutoff;
+                                    child.material.needsUpdate = true;
+                                }
+                                // Áp dụng độ trong suốt (isOpaque)
+                                if (matSettings.isOpaque !== undefined) {
+                                    child.material.transparent = !matSettings.isOpaque;
+                                    child.material.needsUpdate = true;
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // === SETUP ANIMATION ===
+                mixer = new THREE.AnimationMixer(avatar);
+                const clips = gltf.animations;
+                
+                if (clips && clips.length > 0) {
+                    let clipIndex = 0;
+                    if (botConfig && botConfig.animation && botConfig.animation.activeClipIndex !== undefined) {
+                        clipIndex = botConfig.animation.activeClipIndex;
+                    }
+                    
+                    if (clips[clipIndex]) {
+                        animationAction = mixer.clipAction(clips[clipIndex]);
+                        
+                        // Áp dụng Time Scale
+                        if (botConfig && botConfig.animation && botConfig.animation.timeScale) {
+                            animationAction.timeScale = botConfig.animation.timeScale;
+                        }
+                        
+                        animationAction.play();
+                    }
+                }
+                
+                // Hide loading
+                setTimeout(() => {
+                    const loading = document.getElementById('loading-overlay');
+                    if(loading) {
+                        loading.style.opacity = '0';
+                        setTimeout(() => {
+                            loading.style.display = 'none';
+                        }, 500);
+                    }
+                }, 1000);
+                
+                // Show text bubble
+                setTimeout(() => {
+                    const bubble = document.getElementById('text-bubble');
+                    if(bubble) bubble.classList.add('show');
+                }, 1500);
+
+            }, undefined, (error) => {
+                console.error('Error loading 3D model:', error);
+                // Nếu load model local lỗi, thử fallback về link cũ nếu cần, hoặc chỉ tắt loading
+                const loading = document.getElementById('loading-overlay');
+                if(loading) loading.style.display = 'none';
+                updateBubble('Lỗi tải nhân vật 3D (Kiểm tra file model.glb).', true);
+            });
+            
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                const delta = clock.getDelta();
+                if (mixer) mixer.update(delta);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        // Chạy ứng dụng
+        initApp();
+        
+        // === CHAT FUNCTIONALITY ===
+        const textInput = document.getElementById('text-input');
+        const sendBtn = document.getElementById('send-btn');
+        const micBtn = document.getElementById('mic-btn');
+        const bubbleText = document.getElementById('bubble-text');
+        const textBubble = document.getElementById('text-bubble');
+        
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        
+        // Send text
+        async function sendMessage() {
+            const text = textInput.value.trim();
+            if (!text) return;
+            
+            // Show user message
+            updateBubble(`Đang suy nghĩ...`, true);
+            textInput.value = '';
+            
+            try {
+                // Điều chỉnh endpoint API nếu cần
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                
+                const data = await response.json();
+                
+                if (data.answer) {
+                    updateBubble(data.answer, true);
+                    
+                    // Play audio if available
+                    if (data.audio_path) {
+                        const audio = new Audio(`/static/${data.audio_path}`);
+                        audio.play().catch(e => console.log('Audio play failed:', e));
+                    }
+                } else {
+                    updateBubble('Xin lỗi, đã có lỗi xảy ra.', true);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                updateBubble('Không thể kết nối đến server.', true);
+            }
+        }
+        
+        function updateBubble(text, show = true) {
+            if(bubbleText) bubbleText.textContent = text;
+            if (show && textBubble) {
+                textBubble.classList.add('show');
+            }
+        }
+        
+        if(sendBtn) sendBtn.addEventListener('click', sendMessage);
+        if(textInput) textInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+        
+        // Microphone recording
+        if(micBtn) {
+            micBtn.addEventListener('mousedown', startRecording);
+            micBtn.addEventListener('mouseup', stopRecording);
+            micBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); });
+            micBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopRecording(); });
+        }
+        
+        async function startRecording() {
+            if (isRecording) return;
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    await sendAudio(audioBlob);
+                    stream.getTracks().forEach(track => track.stop());
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                if(micBtn) micBtn.classList.add('recording');
+                updateBubble('Đang nghe...', true);
+            } catch (error) {
+                console.error('Microphone error:', error);
+                updateBubble('Không thể truy cập microphone.', true);
+            }
+        }
+        
+        function stopRecording() {
+            if (!isRecording || !mediaRecorder) return;
+            
+            if (mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
+            if(micBtn) micBtn.classList.remove('recording');
+            updateBubble('Đang xử lý...', true);
+        }
+        
+        async function sendAudio(audioBlob) {
+            try {
+                const formData = new FormData();
+                formData.append('file', audioBlob, 'recording.wav');
+                
+                const response = await fetch('http://localhost:8001/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.text) {
+                    textInput.value = data.text;
+                    await sendMessage();
+                } else {
+                    updateBubble('Không nhận diện được giọng nói.', true);
+                }
+            } catch (error) {
+                console.error('STT error:', error);
+                updateBubble('Lỗi nhận diện giọng nói.', true);
+            }
+        }
+    </script>
+</body>
+</html>

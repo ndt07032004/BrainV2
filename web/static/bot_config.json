@@ -1,0 +1,98 @@
+{
+  "modelInfo": {
+    "name": "model"
+  },
+  "camera": {
+    "position": [
+      0.22008839288863535,
+      5.548227763367854,
+      19.354038256537333
+    ],
+    "target": [
+      0,
+      1.55,
+      0
+    ],
+    "zoom": 1
+  },
+  "animation": {
+    "activeClipIndex": 0,
+    "timeScale": 1
+  },
+  "morphs": {
+    "Fcl_ALL_Neutral": 0,
+    "Fcl_ALL_Angry": 0,
+    "Fcl_ALL_Fun": 0,
+    "Fcl_ALL_Joy": 0,
+    "Fcl_ALL_Sorrow": 0,
+    "Fcl_ALL_Surprised": 0,
+    "Fcl_BRW_Angry": 0,
+    "Fcl_BRW_Fun": 0,
+    "Fcl_BRW_Joy": 0,
+    "Fcl_BRW_Sorrow": 0,
+    "Fcl_BRW_Surprised": 0,
+    "Fcl_EYE_Natural": 0,
+    "Fcl_EYE_Angry": 0,
+    "Fcl_EYE_Close": 0,
+    "Fcl_EYE_Close_R": 0,
+    "Fcl_EYE_Close_L": 0,
+    "Fcl_EYE_Fun": 0,
+    "Fcl_EYE_Joy": 0,
+    "Fcl_EYE_Joy_R": 0,
+    "Fcl_EYE_Joy_L": 0,
+    "Fcl_EYE_Sorrow": 0,
+    "Fcl_EYE_Surprised": 0,
+    "Fcl_EYE_Spread": 0,
+    "Fcl_EYE_Iris_Hide": 0,
+    "Fcl_EYE_Highlight_Hide": 0,
+    "Fcl_MTH_Close": 0,
+    "Fcl_MTH_Up": 0,
+    "Fcl_MTH_Down": 0,
+    "Fcl_MTH_Angry": 0,
+    "Fcl_MTH_Small": 0,
+    "Fcl_MTH_Large": 0,
+    "Fcl_MTH_Neutral": 0,
+    "Fcl_MTH_Fun": 0,
+    "Fcl_MTH_Joy": 0,
+    "Fcl_MTH_Sorrow": 0,
+    "Fcl_MTH_Surprised": 0,
+    "Fcl_MTH_SkinFung": 0,
+    "Fcl_MTH_SkinFung_R": 0,
+    "Fcl_MTH_SkinFung_L": 0,
+    "Fcl_MTH_A": 0,
+    "Fcl_MTH_I": 0,
+    "Fcl_MTH_U": 0,
+    "Fcl_MTH_E": 0,
+    "Fcl_MTH_O": 0,
+    "Fcl_HA_Hide": 0,
+    "Fcl_HA_Fung1": 0,
+    "Fcl_HA_Fung1_Low": 0,
+    "Fcl_HA_Fung1_Up": 0,
+    "Fcl_HA_Fung2": 0,
+    "Fcl_HA_Fung2_Low": 0,
+    "Fcl_HA_Fung2_Up": 0,
+    "Fcl_HA_Fung3": 0,
+    "Fcl_HA_Fung3_Up": 0,
+    "Fcl_HA_Fung3_Low": 0,
+    "Fcl_HA_Short": 0,
+    "Fcl_HA_Short_Up": 0,
+    "Fcl_HA_Short_Low": 0
+  },
+  "materials": {
+    "Body": {
+      "alphaCutoff": -0.040000000000000036,
+      "isSoft": false,
+      "isOpaque": false
+    },
+    "Face": {
+      "alphaCutoff": 0.010000000000000009,
+      "isSoft": false,
+      "isOpaque": false
+    },
+    "Hair": {
+      "alphaCutoff": 0.30000000000000004,
+      "isSoft": false,
+      "isOpaque": true
+    }
+  }
+}
